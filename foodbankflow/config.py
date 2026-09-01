@@ -1,6 +1,10 @@
 """Runtime configuration. One place for the model id, region and data paths."""
+import logging
 import os
 import pathlib
+
+# quiet a benign Strands warning when a no-arg tool is called with an empty input
+logging.getLogger("strands").setLevel(logging.ERROR)
 
 PKG_DIR = pathlib.Path(__file__).resolve().parent
 DATA_DIR = PKG_DIR / "data"
