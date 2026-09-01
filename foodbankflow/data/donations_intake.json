@@ -1,0 +1,18 @@
+{
+  "_note": "Queue of donations to log. Each is what the vision step returns from a photo of the drop-off (donor + line items). Amounts in units.",
+  "queue": [
+    {"donor": "Hillside Grocery", "logged": false, "items": [
+      {"name": "Rice 5lb", "sku": "rice-5lb", "category": "grain", "units": 12, "perishable": false, "expiry": "2027-06-01"},
+      {"name": "Black beans (can)", "sku": "beans-can", "category": "protein", "units": 24, "perishable": false, "expiry": "2027-03-01"},
+      {"name": "Bananas 2lb", "sku": "bananas-bag", "category": "produce", "units": 20, "perishable": true, "expiry": "2026-09-05"}
+    ]},
+    {"donor": "Community Garden Co-op", "logged": false, "items": [
+      {"name": "Carrots 2lb bag", "sku": "carrots-bag", "category": "produce", "units": 15, "perishable": true, "expiry": "2026-09-14"},
+      {"name": "Zucchini 1lb", "sku": "zucchini", "category": "produce", "units": 18, "perishable": true, "expiry": "2026-09-08"}
+    ]},
+    {"donor": "St. Marks Drive", "logged": false, "items": [
+      {"name": "Peanut butter jar", "sku": "peanut-butter", "category": "protein", "units": 10, "perishable": false, "expiry": "2026-12-01"},
+      {"name": "Diapers size 3 (pack)", "sku": "diapers-pk", "category": "hygiene", "units": 6, "perishable": false, "expiry": "2030-01-01"}
+    ]}
+  ]
+}

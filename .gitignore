@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+*.db
+*.db-*
+.agentcore/
+.bedrock_agentcore.yaml
+Dockerfile.bak
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+out/
+artifacts_out/
+.DS_Store

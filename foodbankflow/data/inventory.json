@@ -1,0 +1,17 @@
+{
+  "as_of": "2026-09-01",
+  "items": [
+    {"sku": "rice-5lb", "name": "Rice 5lb", "category": "grain", "units": 40, "perishable": false, "expiry": "2027-04-01"},
+    {"sku": "pasta-1lb", "name": "Pasta 1lb", "category": "grain", "units": 22, "perishable": false, "expiry": "2026-12-01"},
+    {"sku": "beans-can", "name": "Black beans (can)", "category": "protein", "units": 6, "perishable": false, "expiry": "2027-01-01"},
+    {"sku": "tuna-can", "name": "Tuna (can)", "category": "protein", "units": 9, "perishable": false, "expiry": "2026-11-15"},
+    {"sku": "peanut-butter", "name": "Peanut butter jar", "category": "protein", "units": 6, "perishable": false, "expiry": "2026-10-20"},
+    {"sku": "milk-shelf", "name": "Shelf milk 1qt", "category": "dairy", "units": 8, "perishable": true, "expiry": "2026-09-06"},
+    {"sku": "eggs-dozen", "name": "Eggs (dozen)", "category": "dairy", "units": 6, "perishable": true, "expiry": "2026-09-04"},
+    {"sku": "apples-bag", "name": "Apples 3lb bag", "category": "produce", "units": 25, "perishable": true, "expiry": "2026-09-09"},
+    {"sku": "carrots-bag", "name": "Carrots 2lb bag", "category": "produce", "units": 30, "perishable": true, "expiry": "2026-09-12"},
+    {"sku": "bread-loaf", "name": "Bread loaf", "category": "grain", "units": 16, "perishable": true, "expiry": "2026-09-03"},
+    {"sku": "diapers-pk", "name": "Diapers size 3 (pack)", "category": "hygiene", "units": 4, "perishable": false, "expiry": "2030-01-01"},
+    {"sku": "soap-bar", "name": "Soap bar", "category": "hygiene", "units": 20, "perishable": false, "expiry": "2030-01-01"}
+  ]
+}
