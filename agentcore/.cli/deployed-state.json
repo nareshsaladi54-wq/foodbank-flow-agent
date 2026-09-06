@@ -1,3 +1,17 @@
 {
-  "targets": {}
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "foodbankflow": {
+            "runtimeId": "foodbankflow_foodbankflow-VR5WS95klf",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:544795558101:runtime/foodbankflow_foodbankflow-VR5WS95klf",
+            "roleArn": "arn:aws:iam::544795558101:role/AgentCore-foodbankflow-de-ApplicationAgentFoodbankf-dYTH7imIkzvT"
+          }
+        },
+        "stackName": "AgentCore-foodbankflow-default",
+        "deployHash": "21f6f36ca8408bb5"
+      }
+    }
+  }
 }
