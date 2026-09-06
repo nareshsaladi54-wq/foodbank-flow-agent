@@ -5,7 +5,10 @@
   `foodbankflow/config.py` (`MODEL_ID`). In us-east-1 the default cross-region
   Claude Haiku profile is on by default for new accounts.
 - `aws configure` complete (`aws sts get-caller-identity` works).
-- Docker running (AgentCore builds an ARM64 image).
+- Node.js 18+ and the AgentCore CLI: `npm install -g @aws/agentcore`.
+  (The old `bedrock-agentcore-starter-toolkit` Python CLI is deprecated —
+  this repo now deploys with the CLI's CodeZip build, so no Docker is
+  needed.)
 - Python 3.11+.
 
 ## 1. Local check
@@ -17,23 +20,30 @@ make agent          # one real Bedrock turn
 make serve          # POST http://localhost:8080/invocations {"prompt": "..."}
 ```
 
-## 2. Configure the runtime
+## 2. Project config
+The runtime is already registered as a "bring your own code" agent in
+`agentcore/agentcore.json` (CodeZip build, entrypoint `agentcore_app.py`,
+code location `.`). Dependencies are declared in `pyproject.toml` (kept in
+sync with `requirements.txt`) since the CDK packaging step needs it. Install
+the CDK app's own dependencies once:
 ```bash
-.venv/bin/agentcore configure -e agentcore_app.py -n foodbankflow -rf requirements.txt
+npm install --prefix agentcore/cdk
 ```
-This writes `.bedrock_agentcore.yaml`, creates an execution role and an ECR
-repo. Accept the defaults; enable AgentCore Memory if prompted (used for the
-long-term memory tools).
+Re-run `agentcore add agent` / edit `agentcore/agentcore.json` directly only
+if you need to change the runtime name, memory, or network settings.
 
 ## 3. Deploy
 ```bash
-.venv/bin/agentcore deploy
+make deploy      # agentcore deploy
 ```
-Builds the ARM64 container, pushes to ECR, creates the AgentCore Runtime.
+Synthesizes and deploys a CDK stack that packages the code (CodeZip, no
+container build), creates the execution role, and creates the AgentCore
+Runtime. On first use in an account/region it will prompt to bootstrap CDK
+(`agentcore deploy --yes` auto-bootstraps non-interactively).
 
 ## 4. Invoke
 ```bash
-.venv/bin/agentcore invoke '{"prompt": "<a request in plain language>"}'
+make invoke P="<a request in plain language>"    # agentcore invoke "$(P)"
 ```
 Or from any app with the SDK:
 ```python
@@ -55,7 +65,7 @@ AgentCore Memory and the seed/`data` files.
 
 ## 6. Tear down
 ```bash
-.venv/bin/agentcore destroy
+make destroy     # agentcore remove agent --name foodbankflow --yes && agentcore deploy --yes
 ```
 
 Repo: https://github.com/nareshsaladi54-wq/foodbank-flow-agent

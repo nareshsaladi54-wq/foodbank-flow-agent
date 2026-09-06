@@ -1,7 +1,7 @@
 PY ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 
-.PHONY: venv test demo agent serve deploy invoke clean
+.PHONY: venv test demo agent serve deploy invoke destroy clean
 
 venv:
 	python3 -m venv .venv && $(PIP) install -U pip && $(PIP) install -r requirements.txt
@@ -18,12 +18,15 @@ agent:           ## one real agent turn against Bedrock
 serve:           ## local AgentCore contract on :8080
 	$(PY) agentcore_app.py
 
-deploy:
-	.venv/bin/agentcore configure -e agentcore_app.py -n foodbankflow -rf requirements.txt || true
-	.venv/bin/agentcore deploy
+deploy:          ## deploy via the AgentCore CLI (CDK); bootstraps the account on first run
+	agentcore deploy
 
 invoke:
-	.venv/bin/agentcore invoke '{"prompt": "$(P)"}'
+	agentcore invoke "$(P)"
+
+destroy:         ## tear down the deployed runtime
+	agentcore remove agent --name foodbankflow --yes
+	agentcore deploy --yes
 
 clean:
 	rm -rf .pytest_cache out artifacts_out **/__pycache__
