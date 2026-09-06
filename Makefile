@@ -24,8 +24,8 @@ deploy:          ## deploy via the AgentCore CLI (CDK); bootstraps the account o
 invoke:
 	agentcore invoke "$(P)"
 
-destroy:         ## tear down the deployed runtime
-	agentcore remove agent --name foodbankflow --yes
+destroy:         ## tear down the deployed runtime (safe to re-run)
+	agentcore remove agent --name foodbankflow --yes || true
 	agentcore deploy --yes
 
 clean:
