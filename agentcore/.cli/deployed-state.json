@@ -4,13 +4,19 @@
       "resources": {
         "runtimes": {
           "foodbankflow": {
-            "runtimeId": "foodbankflow_foodbankflow-VR5WS95klf",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:544795558101:runtime/foodbankflow_foodbankflow-VR5WS95klf",
-            "roleArn": "arn:aws:iam::544795558101:role/AgentCore-foodbankflow-de-ApplicationAgentFoodbankf-dYTH7imIkzvT"
+            "runtimeId": "foodbankflow_foodbankflow-9dx801G1qw",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:371861912105:runtime/foodbankflow_foodbankflow-9dx801G1qw",
+            "roleArn": "arn:aws:iam::371861912105:role/AgentCore-foodbankflow-de-ApplicationAgentFoodbankf-rn449WPhC1S2"
+          }
+        },
+        "memories": {
+          "foodbankflow_notes": {
+            "memoryId": "foodbankflow_foodbankflow_notes-HbsYgX51xZ",
+            "memoryArn": "arn:aws:bedrock-agentcore:us-east-1:371861912105:memory/foodbankflow_foodbankflow_notes-HbsYgX51xZ"
           }
         },
         "stackName": "AgentCore-foodbankflow-default",
-        "deployHash": "21f6f36ca8408bb5"
+        "deployHash": "1aaf7a29ce011734"
       }
     }
   }

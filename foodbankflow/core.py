@@ -163,7 +163,7 @@ def community_ask(today: date | None = None) -> str:
     if exp:
         lines += ["", "USE THIS WEEK (or we lose it):"]
         for e in exp:
-            lines.append(f"  - {e['units']} x {e['name']} — expires in {e['days_left']} day(s)")
+            lines.append(f"  - {e['units']} x {e['name']} - expires in {e['days_left']} day(s)")
     if plan["families_short"]:
         lines += ["", f"Families we can't fully stock this cycle: {', '.join(plan['families_short'])}"]
     lines += ["", "Drop-off: Tue-Thu 9am-1pm. Thank you."]

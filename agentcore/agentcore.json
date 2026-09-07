@@ -18,7 +18,20 @@
       "protocol": "HTTP"
     }
   ],
-  "memories": [],
+  "memories": [
+    {
+      "name": "foodbankflow_notes",
+      "eventExpiryDuration": 90,
+      "strategies": [
+        {
+          "type": "SEMANTIC",
+          "namespaceTemplates": [
+            "/users/{actorId}/facts"
+          ]
+        }
+      ]
+    }
+  ],
   "knowledgeBases": [],
   "credentials": [],
   "evaluators": [],

@@ -14,3 +14,4 @@ build/
 out/
 artifacts_out/
 .DS_Store
+foodbankflow/data/memory.md

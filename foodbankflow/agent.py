@@ -2,9 +2,16 @@
 from __future__ import annotations
 
 from strands import Agent
+from strands.telemetry import StrandsTelemetry
 
 from .config import bedrock_model
 from .tools import TOOLS
+
+# Wire spans to the OTLP endpoint the AgentCore Runtime provides (CloudWatch
+# GenAI Observability / X-Ray Transaction Search). StrandsTelemetry() alone
+# only sets up an in-memory tracer provider — it does nothing until an
+# exporter is attached, so without this call no spans ever leave the process.
+StrandsTelemetry().setup_otlp_exporter()
 
 SYSTEM_PROMPT = """You are FoodBankFlow, the operations agent for a small food
 bank run mostly by volunteers. Your job is to turn a pile of donations and a
