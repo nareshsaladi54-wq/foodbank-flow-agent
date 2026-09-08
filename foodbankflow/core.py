@@ -127,10 +127,15 @@ def build_pick_list(family: dict, inventory: list[dict], today: date) -> dict:
             "picks": picks, "unmet": unmet}
 
 
-def plan_distribution(today: date | None = None, with_donations: bool = True) -> dict:
+def plan_distribution(today: date | None = None, with_donations: bool = True,
+                       families: dict | None = None, inventory: list[dict] | None = None) -> dict:
+    """`families`/`inventory` let a caller inject already-fetched data (e.g. from
+    an MCP data source, see tools.py) instead of reading the local seed files.
+    Pass `inventory` already donation-merged with `with_donations=False` to
+    skip the internal load_intake() merge."""
     today = today or date(2026, 9, 1)
-    fam = load_families()
-    inv = load_inventory()
+    fam = families if families is not None else load_families()
+    inv = inventory if inventory is not None else load_inventory()
     if with_donations:
         inv = apply_donations(inv, [d for d in load_intake()])
     working = copy.deepcopy(inv)
@@ -149,16 +154,20 @@ def plan_distribution(today: date | None = None, with_donations: bool = True) ->
     }
 
 
-def community_ask(today: date | None = None) -> str:
+def community_ask(today: date | None = None, families: dict | None = None,
+                   inventory: list[dict] | None = None) -> str:
+    """`families`/`inventory` are passed through to plan_distribution() - see its docstring."""
     today = today or date(2026, 9, 1)
-    plan = plan_distribution(today)
+    fam = families if families is not None else load_families()
+    plan = plan_distribution(today, families=fam, inventory=inventory,
+                              with_donations=inventory is None)
     lines = ["Food bank status for this week's distribution:", ""]
     defs = plan["shortages"]["deficits"]
     if defs:
         lines.append("WE NEED:")
         for d in defs:
             lines.append(f"  - {abs(d['gap'])} more units of {d['category']} "
-                         f"(need {d['need']} for {sum(f['household_size'] for f in load_families()['families'])} people, have {d['on_hand']})")
+                         f"(need {d['need']} for {sum(f['household_size'] for f in fam['families'])} people, have {d['on_hand']})")
     exp = [e for e in plan["expiring"] if e["days_left"] >= 0 and e["units"] > 0]
     if exp:
         lines += ["", "USE THIS WEEK (or we lose it):"]
