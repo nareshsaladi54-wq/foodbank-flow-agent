@@ -52,16 +52,20 @@ c = boto3.client("bedrock-agentcore", region_name="us-east-1")
 r = c.invoke_agent_runtime(
     agentRuntimeArn="<arn from `agentcore status`>",
     runtimeSessionId="s" * 40,
-    payload=json.dumps({"input": {"prompt": "..."}}),
+    payload=json.dumps({"prompt": "..."}),  # matches agentcore_app.py's payload.get("prompt")
 )
 print(json.loads(r["response"].read()))
 ```
 
 ## 5. Schedule it (the "runs in the background" part)
-Point an EventBridge Scheduler rule at a tiny Lambda that calls
-`invoke_agent_runtime` on a cron, or run the same call from your own
-scheduler. The agent is stateless per call; durable state lives in
-AgentCore Memory and the seed/`data` files.
+`make deploy` already provisions this: `agentcore/cdk/lib/cdk-stack.ts`
+creates a small Lambda (`<project>-morning-run`) that calls
+`invoke_agent_runtime` with a "log today's donations, report expiring /
+shortages / surplus" prompt, and an EventBridge Scheduler rule
+(`cron(0 8 * * ? *)`, `America/New_York`) that triggers it every morning.
+Change the cron/timezone in that file and redeploy to adjust the time. The
+agent is stateless per call; durable state lives in AgentCore Memory and the
+seed/`data` files.
 
 ## 6. Tear down
 ```bash

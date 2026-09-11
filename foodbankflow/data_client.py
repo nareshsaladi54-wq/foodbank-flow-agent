@@ -51,8 +51,8 @@ def _session() -> MCPClient:
     return _client
 
 
-def _call(tool_name: str):
-    result = _session().call_tool_sync(str(uuid.uuid4()), tool_name)
+def _call(tool_name: str, arguments: dict | None = None):
+    result = _session().call_tool_sync(str(uuid.uuid4()), tool_name, arguments)
     if result["status"] != "success":
         raise RuntimeError(f"MCP tool {tool_name!r} failed: {result}")
     structured = result.get("structuredContent")
@@ -79,3 +79,9 @@ def get_families() -> dict:
 def get_intake_queue() -> list[dict]:
     """Pending donations from the intake queue, via the foodbankflow-data MCP server."""
     return _call("get_intake_queue")
+
+
+def add_intake_donation(donor: str, items: list[dict]) -> dict:
+    """Queue one drop-off's line items (from the vision step), via the
+    foodbankflow-data MCP server."""
+    return _call("add_intake_donation", {"donor": donor, "items": items})

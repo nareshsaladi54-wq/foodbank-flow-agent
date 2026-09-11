@@ -1,5 +1,6 @@
 """Deterministic tests - no model, no network."""
 import copy
+import json
 from datetime import date
 
 from foodbankflow import core
@@ -79,3 +80,20 @@ def test_plan_distribution_runs_and_reports():
 def test_community_ask_names_the_dairy_gap():
     text = core.community_ask(TODAY)
     assert "dairy" in text and "WE NEED" in text
+
+
+def test_append_intake_item_queues_a_new_donation(tmp_path):
+    scratch = tmp_path / "donations_intake.json"
+    scratch.write_text(json.dumps({"queue": list(core.load_intake())}))
+    items = [{"name": "Canned corn", "sku": "corn-can", "category": "produce",
+              "units": 8, "perishable": False, "expiry": "2027-01-01"}]
+    before = len(core.load_intake())
+
+    queue = core.append_intake_item("Photo Donor", items, path=scratch)
+
+    assert len(queue) == before + 1
+    assert queue[-1] == {"donor": "Photo Donor", "logged": False, "items": items}
+    # the real seed file is untouched
+    assert len(core.load_intake()) == before
+    # and the write round-trips through disk
+    assert json.loads(scratch.read_text())["queue"][-1]["donor"] == "Photo Donor"

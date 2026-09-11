@@ -8,8 +8,11 @@ import {
   type CustomJWTAuthorizerConfig,
   type HarnessDeploymentConfig,
 } from '@aws/agentcore-cdk';
-import { CfnOutput, Stack, type StackProps } from 'aws-cdk-lib';
+import { CfnOutput, Duration, Stack, TimeZone, type StackProps } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as scheduler from 'aws-cdk-lib/aws-scheduler';
+import * as targets from 'aws-cdk-lib/aws-scheduler-targets';
 import { Construct } from 'constructs';
 
 /**
@@ -134,6 +137,78 @@ export class AgentCoreStack extends Stack {
         credentials,
         projectTags: spec.tags,
       });
+    }
+
+    // Morning schedule: EventBridge Scheduler -> Lambda -> invoke_agent_runtime,
+    // the SCHED -> APP edge in ARCHITECTURE.md ("EventBridge Scheduler every
+    // morning"). The agent is stateless per call, so this is just a daily cron
+    // trigger with a fixed "run today's plan" prompt - no separate worker.
+    const foodbankflowEnv = this.application.environments.get('foodbankflow');
+    if (foodbankflowEnv) {
+      const morningRunFn = new lambda.Function(this, 'MorningRunFunction', {
+        functionName: `${spec.name}-morning-run`,
+        description: `Invokes the ${spec.name} AgentCore runtime with the morning-plan prompt.`,
+        runtime: lambda.Runtime.PYTHON_3_13,
+        handler: 'index.handler',
+        timeout: Duration.seconds(120),
+        memorySize: 256,
+        environment: {
+          AGENT_RUNTIME_ARN: foodbankflowEnv.runtime.runtimeArn,
+        },
+        code: lambda.Code.fromInline(`
+import json
+import os
+import uuid
+
+import boto3
+
+PROMPT = (
+    "Log today's donations, then report what's expiring this week, this "
+    "week's shortages, and any surplus."
+)
+
+
+def handler(event, context):
+    client = boto3.client("bedrock-agentcore")
+    response = client.invoke_agent_runtime(
+        agentRuntimeArn=os.environ["AGENT_RUNTIME_ARN"],
+        runtimeSessionId=f"scheduled-morning-run-{uuid.uuid4().hex}",
+        # agentcore_app.py's entrypoint reads payload.get("prompt")/("actor_id")
+        # directly - no "input" wrapper (that's a different, incorrect shape
+        # that used to be documented in DEPLOY.md).
+        payload=json.dumps({"prompt": PROMPT, "actor_id": "scheduler"}),
+    )
+    body = response["response"].read().decode("utf-8")
+    print(body)
+    return {"statusCode": 200, "body": body}
+`.trim()),
+      });
+      // runtime.grantInvoke() only scopes to the runtime ARN itself, but IAM
+      // evaluates InvokeAgentRuntime against the runtime-*endpoint* ARN
+      // (".../runtime-endpoint/DEFAULT") - grant explicitly on both so the
+      // call the Lambda actually makes is authorized.
+      morningRunFn.addToRolePolicy(new iam.PolicyStatement({
+        actions: ['bedrock-agentcore:InvokeAgentRuntime', 'bedrock-agentcore:InvokeAgentRuntimeForUser'],
+        resources: [
+          foodbankflowEnv.runtime.runtimeArn,
+          `${foodbankflowEnv.runtime.runtimeArn}/runtime-endpoint/*`,
+        ],
+      }));
+
+      new scheduler.Schedule(this, 'MorningRunSchedule', {
+        scheduleName: `${spec.name}-morning-run`,
+        description: `Every morning: invoke ${spec.name} to log donations and report expiring/shortages/surplus.`,
+        schedule: scheduler.ScheduleExpression.cron({
+          minute: '0',
+          hour: '8',
+          timeZone: TimeZone.AMERICA_NEW_YORK,
+        }),
+        target: new targets.LambdaInvoke(morningRunFn, {
+          input: scheduler.ScheduleTargetInput.fromObject({}),
+        }),
+      });
+
+      new CfnOutput(this, 'MorningRunFunctionName', { value: morningRunFn.functionName });
     }
 
     // Create payment infrastructure via CFN constructs

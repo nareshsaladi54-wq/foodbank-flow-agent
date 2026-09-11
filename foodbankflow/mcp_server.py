@@ -37,7 +37,17 @@ def get_families() -> dict:
 @mcp.tool()
 def get_intake_queue() -> list[dict]:
     """Pending donations from the photo/vision drop-off step: donor + line items."""
-    return core.load_intake()
+    return core.load_runtime_intake()
+
+
+@mcp.tool()
+def add_intake_donation(donor: str, items: list[dict]) -> dict:
+    """Queue one drop-off's line items - what the vision step reads off a photo -
+    for log_donations to fold into inventory next. Backed by
+    core.append_intake_item; a real backend would write to the
+    warehouse/intake system here instead of the local seed file."""
+    queue = core.append_intake_item(donor, items)
+    return {"queued": True, "donor": donor, "queue_length": len(queue)}
 
 
 if __name__ == "__main__":

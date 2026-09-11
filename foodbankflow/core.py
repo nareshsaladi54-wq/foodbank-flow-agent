@@ -5,11 +5,24 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import pathlib
+import shutil
+import tempfile
 from datetime import date
 
 from .config import DATA_DIR
 
 EXPIRY_WINDOW_DAYS = 5
+CATEGORIES = ("grain", "protein", "produce", "dairy", "hygiene")
+
+# Fallback write target for the intake queue when the packaged seed file
+# isn't writable - see _intake_queue_path(). Cached per-process so a warm
+# AgentCore Runtime container keeps using the same copy (and keeps whatever
+# was queued in it) across invocations, rather than re-seeding and losing
+# earlier queued items.
+_RUNTIME_INTAKE_COPY = pathlib.Path(tempfile.gettempdir()) / "foodbankflow_donations_intake.json"
+_intake_write_target: pathlib.Path | None = None
 
 
 def _load(name: str) -> dict:
@@ -26,7 +39,58 @@ def load_families() -> dict:
 
 
 def load_intake() -> list[dict]:
+    """The packaged seed file's intake queue - always, regardless of any
+    photo-intake writes redirected elsewhere by append_intake_item. Used
+    directly by run_demo.py and the tests, which need a deterministic,
+    network-free read; mcp_server.py's get_intake_queue uses
+    load_runtime_intake() instead, which does see those writes."""
     return _load("donations_intake.json")["queue"]
+
+
+def _intake_queue_path() -> pathlib.Path:
+    """Where the runtime intake queue actually lives: the packaged seed file
+    when it's writable (local dev, tests, run_demo.py), or a /tmp copy -
+    seeded from the packaged file the first time it's needed - when it isn't.
+    The deployed AgentCore Runtime's code directory (/var/task) is read-only,
+    so a live photo-intake write there raises PermissionError; this is the
+    fallback. Resolved once per process and cached."""
+    global _intake_write_target
+    if _intake_write_target is not None:
+        return _intake_write_target
+    seed = DATA_DIR / "donations_intake.json"
+    if os.access(seed, os.W_OK):
+        _intake_write_target = seed
+    else:
+        if not _RUNTIME_INTAKE_COPY.exists():
+            shutil.copy(seed, _RUNTIME_INTAKE_COPY)
+        _intake_write_target = _RUNTIME_INTAKE_COPY
+    return _intake_write_target
+
+
+def load_runtime_intake() -> list[dict]:
+    """load_intake(), but reflecting any photo-intake items queued this
+    process's lifetime (including ones redirected to the /tmp fallback - see
+    _intake_queue_path). What mcp_server.py's get_intake_queue serves."""
+    with open(_intake_queue_path()) as fh:
+        return json.load(fh)["queue"]
+
+
+def append_intake_item(donor: str, items: list[dict], path: pathlib.Path | None = None) -> list[dict]:
+    """Queue one drop-off's line items - what the vision step reads off a
+    photo - onto the intake queue for log_donations to pick up next.
+    Persists to _intake_queue_path() (or `path`, for tests, bypassing that
+    resolution entirely) and returns the updated queue; mcp_server.py's
+    add_intake_donation wraps this for the live agent. A real deployment
+    would write to the warehouse/intake system here instead - same
+    stand-in relationship load_intake() has to it."""
+    path = path or _intake_queue_path()
+    with open(path) as fh:
+        doc = json.load(fh)
+    doc["queue"].append({"donor": donor, "logged": False, "items": items})
+    with open(path, "w") as fh:
+        json.dump(doc, fh, indent=2)
+        fh.write("\n")
+    return doc["queue"]
 
 
 def apply_donations(inventory: list[dict], donations: list[dict]) -> list[dict]:

@@ -65,7 +65,10 @@ See [DEPLOY.md](DEPLOY.md).
 .venv/bin/agentcore invoke '{"prompt": "Log today's donations. What is spoiling, what are we short?"}'
 ```
 
-Schedule it each morning; point the donation-photo intake at the same runtime.
+`agentcore deploy` also provisions the morning schedule (EventBridge Scheduler
+→ Lambda → `invoke_agent_runtime`, 8am America/New_York) and the donation-photo
+intake goes through the same runtime via the `intake_photo` tool — see
+[DEPLOY.md](DEPLOY.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Data
 

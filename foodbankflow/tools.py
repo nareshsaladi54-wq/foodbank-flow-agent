@@ -46,6 +46,39 @@ def intake_queue() -> list[dict]:
     return data_client.get_intake_queue()
 
 
+def queue_photo_intake(image_base64: str, media_type: str = "image/jpeg", donor: str = "") -> dict:
+    """The vision step's actual work: decode a photo, read it, queue its line
+    items for log_donations. Plain function (not @tool) so callers can run it
+    directly in Python - agentcore_app.py does, for any payload carrying
+    image_base64, rather than asking the model to retype a many-KB base64
+    blob as a tool-call argument (slow, and prone to stalling the stream).
+    intake_photo below wraps this for the rarer case where the model itself
+    already has the base64 in hand (e.g. a prior tool result) and decides to
+    call it."""
+    import base64
+
+    from . import vision
+
+    parsed = vision.extract_donation(base64.b64decode(image_base64), media_type)
+    if not parsed["items"]:
+        return {"error": "couldn't identify any items in that photo"}
+    donor_name = donor.strip() or parsed["donor"] or "Unknown donor"
+    data_client.add_intake_donation(donor_name, parsed["items"])
+    return {"donor": donor_name, "items_queued": parsed["items"]}
+
+
+@tool
+def intake_photo(image_base64: str, media_type: str = "image/jpeg", donor: str = "") -> dict:
+    """The vision step: read a photo of a donation drop-off and queue its line
+    items for log_donations. `image_base64` is the photo, base64-encoded;
+    `media_type` is its MIME type (image/jpeg, image/png, ...); pass `donor`
+    to override the model's guess at who dropped it off. Prefer having the
+    caller queue the photo before the agent runs (agentcore_app.py's
+    image_base64 payload field does this) rather than pasting the base64
+    into a prompt for the model to relay here."""
+    return queue_photo_intake(image_base64, media_type, donor)
+
+
 @tool
 def log_donations() -> dict:
     """Log the intake queue into inventory. Returns the donors logged and the
@@ -110,6 +143,6 @@ def recall_notes(actor_id: str, about: str = "") -> list[str]:
     return memory.recall(actor_id, about)
 
 
-TOOLS = [get_inventory, list_families, intake_queue, log_donations, expiring_report,
-         shortage_report, family_pick_list, plan_week, draft_community_ask,
-         remember_note, recall_notes]
+TOOLS = [get_inventory, list_families, intake_queue, intake_photo, log_donations,
+         expiring_report, shortage_report, family_pick_list, plan_week,
+         draft_community_ask, remember_note, recall_notes]
